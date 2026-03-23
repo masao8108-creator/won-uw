@@ -654,31 +654,38 @@ let tokenClient = null;
 let accessToken = null;
 let isSignedIn = false;
 
+let gapiInited = false;
+let gisInited = false;
+
 function loadGAPIScript() {
   return new Promise(resolve => {
-    if (window.gapi) { resolve(); return; }
+    if (gapiInited) { resolve(); return; }
     const s = document.createElement('script');
     s.src = 'https://apis.google.com/js/api.js';
     s.onload = () => {
       window.gapi.load('client', async () => {
-        const cfg = loadConfig();
-        if (cfg.apiKey) {
-          await window.gapi.client.init({ apiKey: cfg.apiKey, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
-        }
+        try {
+          await window.gapi.client.init({
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+          });
+        } catch(e) {}
         gapi = window.gapi;
+        gapiInited = true;
         resolve();
       });
     };
+    s.onerror = () => resolve();
     document.head.appendChild(s);
   });
 }
 
 function loadGISScript() {
   return new Promise(resolve => {
-    if (window.google?.accounts) { resolve(); return; }
+    if (gisInited && window.google?.accounts?.oauth2) { resolve(); return; }
     const s = document.createElement('script');
     s.src = 'https://accounts.google.com/gsi/client';
-    s.onload = resolve;
+    s.onload = () => { gisInited = true; resolve(); };
+    s.onerror = () => resolve();
     document.head.appendChild(s);
   });
 }
@@ -742,12 +749,20 @@ async function connectGoogle() {
     await loadGAPIScript();
     await loadGISScript();
 
-    if (!gapi) {
-      await window.gapi.client.init({
-        apiKey: cfg.apiKey,
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-      });
-      gapi = window.gapi;
+    // API Key 설정 (init은 loadGAPIScript에서 완료)
+    if (gapi && cfg.apiKey) {
+      gapi.client.setApiKey(cfg.apiKey);
+    }
+
+    // Drive API discovery 로드 확인
+    if (gapi && !gapi.client.drive) {
+      try {
+        await gapi.client.load('drive', 'v3');
+      } catch(e) {}
+    }
+
+    if (!window.google?.accounts?.oauth2) {
+      throw new Error('Google Identity Services 로드 실패. 잠시 후 다시 시도해주세요.');
     }
 
     tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -934,6 +949,13 @@ async function syncNow() {
 }
 
 async function fetchAllFiles(folderId, cfg, parentName = '') {
+  // Drive API 로드 확인
+  if (!window.gapi?.client?.drive) {
+    try { await window.gapi.client.load('drive', 'v3'); } catch(e) {}
+  }
+  if (!window.gapi?.client?.drive) {
+    throw new Error('Drive API를 로드할 수 없습니다. API Key와 Client ID를 확인해주세요.');
+  }
   const files = [];
   const fileTypes = [];
   if (document.getElementById('ft-pdf')?.checked) fileTypes.push("mimeType='application/pdf'");
