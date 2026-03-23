@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>팀 관리 | 원금융 UW System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --bg:#05080f; --s1:#090d18; --s2:#0d1424; --s3:#111b30;
+  --border:#162035; --border2:#1e2f4a;
+  --c1:#00d4ff; --c2:#7c3aed; --c3:#10b981; --c4:#f59e0b; --c5:#ef4444;
+  --c6:#f472b6;
+  --text:#dde4f0; --text2:#7a90b0; --text3:#354560;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 30% 30%,rgba(124,58,237,.06) 0%,transparent 55%),
+             radial-gradient(ellipse at 70% 70%,rgba(244,114,182,.04) 0%,transparent 55%);
+}
+
+.wrap{max-width:960px;margin:0 auto;padding:0 20px 80px;position:relative;}
+
+/* 탑바 */
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:20px 0 18px;border-bottom:1px solid var(--border);margin-bottom:28px;
+  position:sticky;top:0;z-index:100;
+  background:rgba(5,8,15,.9);backdrop-filter:blur(12px);
+}
+.back-btn{
+  display:flex;align-items:center;gap:6px;background:var(--s2);
+  border:1px solid var(--border);border-radius:8px;padding:7px 12px;
+  color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;
+  text-decoration:none;transition:all .2s;font-family:'Noto Sans KR',sans-serif;
+}
+.back-btn:hover{border-color:var(--c2);color:#c4b5fd;}
+.page-title{font-size:17px;font-weight:800;}
+.page-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* 탭 */
+.tabs{
+  display:flex;gap:4px;background:var(--s1);border:1px solid var(--border);
+  border-radius:12px;padding:5px;margin-bottom:24px;
+}
+.tab-btn{
+  flex:1;padding:10px 8px;background:none;border:none;border-radius:9px;
+  color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.tab-btn.active{
+  background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(244,114,182,.1));
+  color:var(--text);box-shadow:inset 0 0 0 1px rgba(124,58,237,.3);
+}
+
+/* 카드 */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:14px;}
+.sec-title{
+  font-size:12px;font-weight:700;color:var(--text3);letter-spacing:.8px;
+  text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* 입력 */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;display:block;}
+.form-input{
+  width:100%;background:var(--s2);border:1px solid var(--border);border-radius:9px;
+  padding:10px 13px;color:var(--text);font-size:13px;
+  font-family:'Noto Sans KR',sans-serif;transition:border-color .2s;
+}
+.form-input:focus{outline:none;border-color:var(--c2);}
+.form-input::placeholder{color:var(--text3);}
+
+/* 버튼 */
+.btn-primary{
+  padding:11px 22px;
+  background:linear-gradient(135deg,var(--c2),var(--c6));
+  border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(124,58,237,.25);
+}
+.btn-primary:hover{transform:translateY(-1px);}
+.btn-sm{
+  padding:7px 14px;background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .2s;
+}
+.btn-sm:hover{border-color:var(--border2);color:var(--text);}
+.btn-sm.danger{color:var(--c5);}
+.btn-sm.danger:hover{border-color:rgba(239,68,68,.4);}
+.btn-sm.ok{color:var(--c3);}
+.btn-sm.ok:hover{border-color:rgba(16,185,129,.4);}
+.btn-sm.purple{color:#c4b5fd;}
+.btn-sm.purple:hover{border-color:rgba(124,58,237,.4);}
+
+/* 설계사 카드 */
+.agent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:700px){.agent-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:450px){.agent-grid{grid-template-columns:1fr;}}
+
+.agent-card{
+  background:var(--s2);border:1.5px solid var(--border);border-radius:12px;
+  padding:16px;position:relative;transition:all .2s;
+}
+.agent-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.agent-card.me{border-color:rgba(124,58,237,.4);background:rgba(124,58,237,.05);}
+
+.agent-avatar{
+  width:46px;height:46px;border-radius:12px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;font-family:'JetBrains Mono',monospace;
+}
+.agent-name{font-size:14px;font-weight:800;margin-bottom:3px;}
+.agent-role{
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;
+  display:inline-block;margin-bottom:8px;
+}
+.agent-role.admin{background:rgba(244,114,182,.12);color:var(--c6);}
+.agent-role.manager{background:rgba(124,58,237,.12);color:#c4b5fd;}
+.agent-role.member{background:rgba(0,212,255,.08);color:var(--c1);}
+
+.agent-stats{display:flex;gap:8px;flex-wrap:wrap;}
+.astat{font-size:11px;color:var(--text3);}
+.astat span{color:var(--text2);font-weight:600;}
+
+.agent-actions{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+.me-badge{
+  position:absolute;top:10px;right:10px;
+  font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;
+  background:rgba(124,58,237,.2);color:#c4b5fd;
+}
+
+/* 공유 설정 */
+.share-table{width:100%;border-collapse:collapse;}
+.share-table th{
+  background:var(--s2);color:var(--text3);font-size:11px;font-weight:700;
+  padding:10px 12px;border:1px solid var(--border);text-align:left;letter-spacing:.5px;
+}
+.share-table td{
+  padding:10px 12px;border:1px solid var(--border);font-size:12px;vertical-align:middle;
+}
+.share-table tr:hover td{background:rgba(255,255,255,.01);}
+.perm-chip{
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;cursor:pointer;
+}
+.perm-chip.on{background:rgba(16,185,129,.12);color:var(--c3);}
+.perm-chip.off{background:var(--s3);color:var(--text3);}
+
+/* 초대 링크 */
+.invite-box{
+  background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(244,114,182,.06));
+  border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:18px;
+}
+.invite-url{
+  background:var(--s3);border:1px solid var(--border2);border-radius:8px;
+  padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  color:var(--c1);margin:10px 0;word-break:break-all;cursor:pointer;
+  transition:border-color .2s;
+}
+.invite-url:hover{border-color:var(--c1);}
+
+/* 활동 로그 */
+.activity-list{display:flex;flex-direction:column;gap:8px;}
+.activity-item{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:9px;
+}
+.activity-icon{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.activity-content{flex:1;}
+.activity-text{font-size:12px;color:var(--text2);line-height:1.5;}
+.activity-text strong{color:var(--text);}
+.activity-time{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:3px;}
+
+/* 프로필 */
+.profile-card{
+  display:flex;align-items:center;gap:20px;
+  background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(0,212,255,.05));
+  border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:22px;
+  margin-bottom:20px;
+}
+.profile-avatar{
+  width:70px;height:70px;border-radius:18px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:900;font-family:'JetBrains Mono',monospace;
+  background:rgba(124,58,237,.15);border:2px solid rgba(124,58,237,.3);
+}
+.profile-name{font-size:20px;font-weight:900;margin-bottom:4px;}
+.profile-info{font-size:12px;color:var(--text3);line-height:1.8;}
+
+/* 로그인 모달 */
+.login-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;backdrop-filter:blur(8px);padding:20px;
+}
+.login-modal{
+  background:var(--s1);border:1px solid var(--border2);border-radius:20px;
+  width:100%;max-width:400px;padding:36px 32px;
+  animation:popIn .25s ease;text-align:center;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:scale(1);}}
+.login-logo{font-size:40px;margin-bottom:16px;}
+.login-title{font-size:20px;font-weight:900;margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text3);margin-bottom:28px;}
+.login-input{
+  width:100%;background:var(--s2);border:1px solid var(--border);border-radius:10px;
+  padding:13px 16px;color:var(--text);font-size:14px;
+  font-family:'Noto Sans KR',sans-serif;margin-bottom:10px;
+  transition:border-color .2s;text-align:left;
+}
+.login-input:focus{outline:none;border-color:var(--c2);}
+.login-input::placeholder{color:var(--text3);}
+.login-btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--c2),var(--c6));
+  border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+  box-shadow:0 4px 20px rgba(124,58,237,.3);margin-top:6px;transition:all .2s;
+}
+.login-btn:hover{transform:translateY(-1px);}
+.login-divider{
+  display:flex;align-items:center;gap:10px;
+  font-size:11px;color:var(--text3);margin:16px 0;
+}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.login-demo{
+  width:100%;padding:12px;background:var(--s2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text2);font-size:13px;font-weight:600;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .2s;
+}
+.login-demo:hover{border-color:var(--c3);color:var(--c3);}
+
+/* 토스트 */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--s2);border:1px solid var(--border2);border-radius:10px;
+  padding:11px 20px;font-size:13px;font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:9999;
+  opacity:0;transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:rgba(16,185,129,.4);color:var(--c3);}
+.toast.err{border-color:rgba(239,68,68,.4);color:var(--c5);}
+.toast.info{border-color:rgba(124,58,237,.4);color:#c4b5fd;}
+
+.info-box{
+  border-radius:10px;padding:13px 16px;font-size:12px;line-height:1.7;margin-bottom:14px;
+}
+.info-box.blue{background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);color:#67e8f9;}
+.info-box.purple{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);color:#c4b5fd;}
+</style>
+</head>
+<body>
+
+<!-- 로그인 모달 -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-modal">
+    <div class="login-logo">🔐</div>
+    <div class="login-title">팀 로그인</div>
+    <div class="login-sub">원금융 스테디사업부 전용</div>
+    <input class="login-input" id="login-name" type="text" placeholder="이름 (예: 홍길동)">
+    <input class="login-input" id="login-code" type="text" placeholder="팀 코드 (예: STEADY2026)" style="letter-spacing:2px;">
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-divider">또는</div>
+    <button class="login-demo" onclick="demoLogin()">🎮 데모 계정으로 체험 (이설계사)</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="topbar">
+    <a class="back-btn" href="index.html">← 허브로</a>
+    <div>
+      <div class="page-title">👥 팀 관리</div>
+      <div class="page-sub">설계사 계정 · 권한 · 고객 공유</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <div id="current-user-badge" style="font-size:12px;color:var(--text3);"></div>
+      <button class="btn-sm" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('profile',this)">👤 내 프로필</button>
+    <button class="tab-btn" onclick="switchTab('team',this)">🏢 팀원 관리</button>
+    <button class="tab-btn" onclick="switchTab('share',this)">🔗 공유 설정</button>
+    <button class="tab-btn" onclick="switchTab('activity',this)">📋 활동 로그</button>
+  </div>
+
+  <!-- 내 프로필 탭 -->
+  <div id="tab-profile">
+    <div class="profile-card" id="profile-card"></div>
+
+    <div class="card">
+      <div class="sec-title">프로필 수정</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">이름</label>
+          <input class="form-input" id="p-name" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">연락처</label>
+          <input class="form-input" id="p-phone" type="tel" placeholder="010-0000-0000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">소속 지점</label>
+          <input class="form-input" id="p-branch" type="text" placeholder="예: 강남지점">
+        </div>
+        <div class="form-group">
+          <label class="form-label">직함</label>
+          <input class="form-input" id="p-title" type="text" placeholder="예: 수석 설계사">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">한 줄 소개</label>
+        <input class="form-input" id="p-bio" type="text" placeholder="예: 건강보험 전문 10년 경력">
+      </div>
+      <button class="btn-primary" onclick="saveProfile()" style="margin-top:4px;">💾 프로필 저장</button>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">내 통계</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;" id="my-stats"></div>
+    </div>
+  </div>
+
+  <!-- 팀원 관리 탭 -->
+  <div id="tab-team" style="display:none;">
+    <div class="info-box purple">
+      💡 팀 코드 <strong style="color:#fff;font-family:'JetBrains Mono',monospace;letter-spacing:2px;">STEADY2026</strong>를 공유하면 팀원이 이 시스템에 로그인할 수 있습니다.
+      같은 기기의 브라우저를 공유하거나, GitHub Pages 배포 후 팀원에게 URL을 공유하세요.
+    </div>
+
+    <div class="sec-title">팀원 목록</div>
+    <div class="agent-grid" id="agent-grid"></div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="sec-title">새 팀원 추가</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">이름</label>
+          <input class="form-input" id="new-name" type="text" placeholder="김설계사">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">직함</label>
+          <input class="form-input" id="new-title" type="text" placeholder="설계사">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">권한</label>
+          <select class="form-input" id="new-role">
+            <option value="member">멤버</option>
+            <option value="manager">매니저</option>
+            <option value="admin">관리자</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="addAgent()" style="padding:10px 18px;white-space:nowrap;">+ 추가</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공유 설정 탭 -->
+  <div id="tab-share" style="display:none;">
+    <div class="info-box blue">
+      🔗 팀원별로 고객 DB 접근 권한을 설정합니다. 같은 localStorage를 사용하는 환경(같은 PC·브라우저)에서만 공유됩니다.
+      다른 기기 간 공유는 CSV 내보내기/가져오기 또는 Firebase 연동(향후 지원)을 이용하세요.
+    </div>
+
+    <div class="card">
+      <div class="sec-title">초대 링크</div>
+      <div class="invite-box">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">팀 초대 링크</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">이 링크로 접속하면 자동으로 팀 코드가 입력됩니다</div>
+        <div class="invite-url" id="invite-url" onclick="copyInviteUrl()">
+          클릭하여 복사
+        </div>
+        <button class="btn-sm purple" onclick="copyInviteUrl()">📋 링크 복사</button>
+        <button class="btn-sm" onclick="regenerateCode()" style="margin-left:6px;">🔄 코드 재생성</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">팀원별 권한</div>
+      <div style="overflow-x:auto;">
+        <table class="share-table" id="share-table">
+          <thead>
+            <tr>
+              <th>설계사</th><th>내 고객 조회</th><th>전체 고객 조회</th>
+              <th>고객 수정</th><th>고객 삭제</th><th>설정 변경</th>
+            </tr>
+          </thead>
+          <tbody id="share-tbody"></tbody>
+        </table>
+      </div>
+      <button class="btn-primary" onclick="savePermissions()" style="margin-top:16px;">💾 권한 저장</button>
+    </div>
+  </div>
+
+  <!-- 활동 로그 탭 -->
+  <div id="tab-activity" style="display:none;">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="sec-title" style="margin:0;">최근 활동</div>
+        <button class="btn-sm danger" onclick="clearLog()">🗑 로그 초기화</button>
+      </div>
+      <div class="activity-list" id="activity-list"></div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 팀 데이터 ───────────────────────────────────
+const TEAM_KEY = 'won_team_v1';
+const LOG_KEY  = 'won_activity_v1';
+const SESSION_KEY = 'won_session_v1';
+const TEAM_CODE = 'STEADY2026';
+
+function loadTeam() {
+  try { return JSON.parse(localStorage.getItem(TEAM_KEY)) || getDefaultTeam(); }
+  catch { return getDefaultTeam(); }
+}
+function saveTeam(t) { localStorage.setItem(TEAM_KEY, JSON.stringify(t)); }
+
+function getDefaultTeam() {
+  return {
+    agents: [
+      { id:'agent_001', name:'이설계사', title:'수석 설계사', role:'admin', branch:'강남지점', phone:'010-1111-2222', bio:'건강보험 전문 10년', joinedAt:'2026-01-01', color:'#00d4ff' },
+      { id:'agent_002', name:'김설계사', title:'설계사', role:'manager', branch:'강남지점', phone:'010-3333-4444', bio:'종신·CI 전문', joinedAt:'2026-02-01', color:'#f472b6' },
+      { id:'agent_003', name:'박설계사', title:'신입 설계사', role:'member', branch:'강남지점', phone:'010-5555-6666', bio:'', joinedAt:'2026-03-01', color:'#10b981' },
+    ],
+    permissions: {}
+  };
+}
+
+function loadLog() {
+  try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }
+  catch { return []; }
+}
+function addLog(text, icon = '📌') {
+  const logs = loadLog();
+  logs.unshift({ text, icon, time: new Date().toISOString() });
+  if (logs.length > 100) logs.pop();
+  localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+}
+
+// ── 세션 ─────────────────────────────────────
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
+  catch { return null; }
+}
+function setSession(agent) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ ...agent, loginAt: new Date().toISOString() }));
+}
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+let currentUser = null;
+let team = loadTeam();
+
+// ── 초기화 ────────────────────────────────────
+window.addEventListener('load', () => {
+  const session = getSession();
+  if (session) {
+    currentUser = session;
+    onLoggedIn();
+  } else {
+    document.getElementById('login-overlay').style.display = 'flex';
+  }
+  // 초대 URL
+  const base = window.location.href.replace('team.html','') + 'team.html';
+  document.getElementById('invite-url').textContent = base + '?code=' + TEAM_CODE;
+
+  // URL 파라미터 자동 로그인
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('code') === TEAM_CODE) {
+    document.getElementById('login-code').value = TEAM_CODE;
+  }
+});
+
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const code = document.getElementById('login-code').value.trim().toUpperCase();
+  if (!name) { alert('이름을 입력해주세요.'); return; }
+  if (code !== TEAM_CODE) { alert('팀 코드가 올바르지 않습니다.\n팀 코드: STEADY2026'); return; }
+
+  // 기존 팀원 찾기 or 신규 생성
+  let agent = team.agents.find(a => a.name === name);
+  if (!agent) {
+    agent = {
+      id: 'agent_' + Date.now(),
+      name, title: '설계사', role: 'member',
+      branch: '', phone: '', bio: '',
+      joinedAt: new Date().toISOString().slice(0,10),
+      color: ['#00d4ff','#f472b6','#10b981','#f59e0b','#a78bfa'][team.agents.length % 5]
+    };
+    team.agents.push(agent);
+    saveTeam(team);
+  }
+
+  setSession(agent);
+  currentUser = agent;
+  addLog(`${name}님이 로그인했습니다`, '🔐');
+  document.getElementById('login-overlay').style.display = 'none';
+  onLoggedIn();
+  showToast(`${name}님, 환영합니다! 👋`, 'ok');
+}
+
+function demoLogin() {
+  document.getElementById('login-name').value = '이설계사';
+  document.getElementById('login-code').value = TEAM_CODE;
+  doLogin();
+}
+
+function logout() {
+  if (!confirm('로그아웃하시겠습니까?')) return;
+  addLog(`${currentUser?.name}님이 로그아웃했습니다`, '👋');
+  clearSession();
+  currentUser = null;
+  window.location.reload();
+}
+
+function onLoggedIn() {
+  team = loadTeam();
+  document.getElementById('current-user-badge').textContent = `🧑‍💼 ${currentUser.name}`;
+  renderProfile();
+  renderAgentGrid();
+  renderShareTable();
+  renderActivityLog();
+}
+
+// ── 프로필 ────────────────────────────────────
+function renderProfile() {
+  if (!currentUser) return;
+  const colors = { admin:'#f472b6', manager:'#c4b5fd', member:var_c1() };
+  function var_c1(){ return '#00d4ff'; }
+  const roleLabel = { admin:'관리자', manager:'매니저', member:'멤버' };
+
+  document.getElementById('profile-card').innerHTML = `
+    <div class="profile-avatar" style="background:rgba(${hexToRgb(currentUser.color||'#00d4ff')},.15);border-color:${currentUser.color||'#00d4ff'}40;">
+      ${(currentUser.name||'?')[0]}
+    </div>
+    <div>
+      <div class="profile-name">${currentUser.name}</div>
+      <div class="profile-info">
+        ${currentUser.title||'설계사'} · ${currentUser.branch||'미설정'}<br>
+        ${currentUser.phone||''} ${currentUser.bio ? '· '+currentUser.bio : ''}<br>
+        <span style="color:${currentUser.color||'#00d4ff'};font-weight:600">${roleLabel[currentUser.role]||'멤버'}</span>
+        · 가입일 ${currentUser.joinedAt||'-'}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('p-name').value = currentUser.name || '';
+  document.getElementById('p-phone').value = currentUser.phone || '';
+  document.getElementById('p-branch').value = currentUser.branch || '';
+  document.getElementById('p-title').value = currentUser.title || '';
+  document.getElementById('p-bio').value = currentUser.bio || '';
+
+  // 내 통계
+  const customers = JSON.parse(localStorage.getItem('won_customers_v1') || '[]');
+  const myC = customers.filter(c => c.agent === currentUser.name);
+  const stats = [
+    { label:'담당 고객', val: myC.length, color:'var(--c1)' },
+    { label:'진행중', val: myC.filter(c=>c.status==='active'||c.status==='pending').length, color:'var(--c4)' },
+    { label:'계약 완료', val: myC.filter(c=>c.status==='closed').length, color:'var(--c3)' },
+    { label:'이슈', val: myC.filter(c=>c.status==='issue').length, color:'var(--c5)' },
+  ];
+  document.getElementById('my-stats').innerHTML = stats.map(s => `
+    <div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:24px;font-weight:900;font-family:'JetBrains Mono',monospace;color:${s.color};line-height:1;margin-bottom:4px;">${s.val}</div>
+      <div style="font-size:11px;color:var(--text3);">${s.label}</div>
+    </div>
+  `).join('');
+}
+
+function saveProfile() {
+  const idx = team.agents.findIndex(a => a.id === currentUser.id);
+  const updated = {
+    ...currentUser,
+    name: document.getElementById('p-name').value.trim() || currentUser.name,
+    phone: document.getElementById('p-phone').value.trim(),
+    branch: document.getElementById('p-branch').value.trim(),
+    title: document.getElementById('p-title').value.trim(),
+    bio: document.getElementById('p-bio').value.trim(),
+  };
+  if (idx >= 0) team.agents[idx] = updated;
+  saveTeam(team);
+  setSession(updated);
+  currentUser = updated;
+  addLog(`${currentUser.name}님이 프로필을 수정했습니다`, '✏️');
+  renderProfile();
+  showToast('프로필 저장 완료 ✓', 'ok');
+}
+
+// ── 팀원 그리드 ──────────────────────────────
+function renderAgentGrid() {
+  const roleLabel = { admin:'관리자', manager:'매니저', member:'멤버' };
+  const customers = JSON.parse(localStorage.getItem('won_customers_v1') || '[]');
+
+  document.getElementById('agent-grid').innerHTML = team.agents.map(a => {
+    const isMe = a.id === currentUser?.id;
+    const myCount = customers.filter(c => c.agent === a.name).length;
+    return `
+      <div class="agent-card ${isMe ? 'me' : ''}">
+        ${isMe ? '<div class="me-badge">나</div>' : ''}
+        <div class="agent-avatar" style="background:rgba(${hexToRgb(a.color||'#00d4ff')},.12);color:${a.color||'#00d4ff'}">
+          ${(a.name||'?')[0]}
+        </div>
+        <div class="agent-name">${a.name}</div>
+        <div class="agent-role ${a.role}">${roleLabel[a.role]||'멤버'}</div>
+        <div class="agent-stats">
+          <div class="astat">담당 <span>${myCount}명</span></div>
+          ${a.branch ? `<div class="astat">지점 <span>${a.branch}</span></div>` : ''}
+        </div>
+        <div class="agent-actions">
+          ${!isMe && currentUser?.role === 'admin' ? `
+            <button class="btn-sm danger" onclick="removeAgent('${a.id}')">제거</button>
+            <select class="btn-sm" onchange="changeRole('${a.id}',this.value)" style="padding:6px 8px;font-size:11px;">
+              <option value="member" ${a.role==='member'?'selected':''}>멤버</option>
+              <option value="manager" ${a.role==='manager'?'selected':''}>매니저</option>
+              <option value="admin" ${a.role==='admin'?'selected':''}>관리자</option>
+            </select>
+          ` : `<div style="font-size:11px;color:var(--text3);">${a.title||''}</div>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addAgent() {
+  const name = document.getElementById('new-name').value.trim();
+  const title = document.getElementById('new-title').value.trim();
+  const role = document.getElementById('new-role').value;
+  if (!name) { showToast('이름을 입력해주세요', 'err'); return; }
+  if (team.agents.find(a => a.name === name)) { showToast('이미 존재하는 이름입니다', 'err'); return; }
+
+  team.agents.push({
+    id: 'agent_' + Date.now(), name, title: title||'설계사', role,
+    branch: '', phone: '', bio: '',
+    joinedAt: new Date().toISOString().slice(0,10),
+    color: ['#00d4ff','#f472b6','#10b981','#f59e0b','#a78bfa'][team.agents.length % 5]
+  });
+  saveTeam(team);
+  ['new-name','new-title'].forEach(id => document.getElementById(id).value = '');
+  renderAgentGrid();
+  renderShareTable();
+  addLog(`${currentUser?.name}님이 팀원 ${name}을 추가했습니다`, '➕');
+  showToast(`${name} 추가 완료 ✓`, 'ok');
+}
+
+function removeAgent(id) {
+  const a = team.agents.find(x => x.id === id);
+  if (!confirm(`${a?.name}님을 팀에서 제거하시겠습니까?`)) return;
+  team.agents = team.agents.filter(x => x.id !== id);
+  saveTeam(team);
+  renderAgentGrid();
+  renderShareTable();
+  addLog(`${currentUser?.name}님이 팀원 ${a?.name}을 제거했습니다`, '➖');
+  showToast('제거 완료', 'err');
+}
+
+function changeRole(id, role) {
+  const idx = team.agents.findIndex(a => a.id === id);
+  if (idx >= 0) { team.agents[idx].role = role; saveTeam(team); }
+  renderAgentGrid();
+  showToast('권한 변경 완료 ✓', 'ok');
+}
+
+// ── 공유 / 권한 테이블 ────────────────────────
+function renderShareTable() {
+  const perms = ['내 고객 조회','전체 고객 조회','고객 수정','고객 삭제','설정 변경'];
+  const permDefaults = { admin:[1,1,1,1,1], manager:[1,1,1,0,0], member:[1,0,0,0,0] };
+
+  document.getElementById('share-tbody').innerHTML = team.agents.map(a => {
+    const rolePerms = permDefaults[a.role] || [1,0,0,0,0];
+    return `
+      <tr>
+        <td><strong>${a.name}</strong> <span style="font-size:10px;color:var(--text3);">(${a.role})</span></td>
+        ${rolePerms.map((on, i) => `
+          <td>
+            <span class="perm-chip ${on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+              ${on ? '✅ 허용' : '❌ 거부'}
+            </span>
+          </td>
+        `).join('')}
+      </tr>
+    `;
+  }).join('');
+}
+
+function savePermissions() {
+  addLog(`${currentUser?.name}님이 권한을 수정했습니다`, '🔒');
+  showToast('권한 설정 저장 완료 ✓', 'ok');
+}
+
+function copyInviteUrl() {
+  const url = document.getElementById('invite-url').textContent;
+  navigator.clipboard.writeText(url).then(() => showToast('초대 링크 복사 완료 ✓', 'info'));
+}
+
+function regenerateCode() {
+  showToast('팀 코드는 고정값(STEADY2026)입니다. 변경이 필요하면 관리자에게 문의하세요.', 'info');
+}
+
+// ── 활동 로그 ────────────────────────────────
+function renderActivityLog() {
+  const logs = loadLog();
+  const icons = { '🔐':{ bg:'rgba(124,58,237,.1)',c:'#c4b5fd' }, '📌':{ bg:'rgba(0,212,255,.1)',c:'#67e8f9' }, '✏️':{ bg:'rgba(245,158,11,.1)',c:'#fcd34d' }, '➕':{ bg:'rgba(16,185,129,.1)',c:'#6ee7b7' }, '➖':{ bg:'rgba(239,68,68,.1)',c:'#fca5a5' }, '🔒':{ bg:'rgba(244,114,182,.1)',c:'#fbcfe8' }, '👋':{ bg:'rgba(71,85,105,.2)',c:'#94a3b8' } };
+
+  if (logs.length === 0) {
+    document.getElementById('activity-list').innerHTML = `<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">활동 기록이 없습니다.</div>`;
+    return;
+  }
+
+  document.getElementById('activity-list').innerHTML = logs.slice(0,30).map(l => {
+    const st = icons[l.icon] || icons['📌'];
+    const dt = new Date(l.time);
+    const timeStr = dt.toLocaleDateString('ko-KR',{month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    return `
+      <div class="activity-item">
+        <div class="activity-icon" style="background:${st.bg};color:${st.c}">${l.icon}</div>
+        <div class="activity-content">
+          <div class="activity-text">${l.text}</div>
+          <div class="activity-time">${timeStr}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function clearLog() {
+  if (!confirm('활동 로그를 초기화하시겠습니까?')) return;
+  localStorage.removeItem(LOG_KEY);
+  renderActivityLog();
+  showToast('로그 초기화 완료', 'err');
+}
+
+// ── 탭 ───────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['profile','team','share','activity'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'activity') renderActivityLog();
+}
+
+// ── 유틸 ─────────────────────────────────────
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '0,212,255';
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type;
+  void t.offsetWidth; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
