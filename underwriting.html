@@ -830,22 +830,22 @@ buildMatrixTable();
 function buildDiagGrid() {
   const grid = document.getElementById('diag-grid');
   grid.innerHTML = DIAG_CATEGORIES.map(cat => `
-    <div class="diag-card" id="diag-${cat.id}" onclick="toggleDiag('${cat.id}')">
-      <div class="diag-card-header">
+    <div class="diag-card" id="diag-${cat.id}">
+      <div class="diag-card-header" onclick="toggleDiag('${cat.id}')" style="cursor:pointer;">
         <div class="diag-check" id="check-${cat.id}"></div>
         <span style="font-size:18px;">${cat.emoji}</span>
         <div class="diag-card-name">${cat.name}</div>
       </div>
-      <div class="diag-card-desc">${cat.desc}</div>
-      <div class="diag-detail" id="detail-${cat.id}">
+      <div class="diag-card-desc" onclick="toggleDiag('${cat.id}')" style="cursor:pointer;">${cat.desc}</div>
+      <div class="diag-detail" id="detail-${cat.id}" onclick="event.stopPropagation()">
         ${cat.fields.map(f => `
           <div class="detail-row">
             <label>${f.label}</label>
             ${f.type === 'select'
-              ? `<select class="input-field" id="field-${cat.id}-${f.id}">
+              ? `<select class="input-field" id="field-${cat.id}-${f.id}" onclick="event.stopPropagation()">
                   ${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}
                  </select>`
-              : `<input type="text" class="input-field" id="field-${cat.id}-${f.id}" placeholder="${f.placeholder||''}">`
+              : `<input type="text" class="input-field" id="field-${cat.id}-${f.id}" placeholder="${f.placeholder||''}" onclick="event.stopPropagation()">`
             }
           </div>
         `).join('')}
