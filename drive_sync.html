@@ -717,15 +717,12 @@ window.addEventListener('load', async () => {
   renderFolderTree(loadFiles());
   renderLog();
 
-  // 이전 세션에서 토큰 있으면 자동 연결
+  // 이전 세션 토큰
   const savedToken = sessionStorage.getItem('won_drive_token');
-  if (savedToken && cfg.clientId) {
+  if (savedToken) {
     accessToken = savedToken;
     isSignedIn = true;
     updateConnectedUI(cfg.userName || '로그인됨', cfg.userEmail || '');
-    if (cfg.autoSync !== false) {
-      setTimeout(() => syncNow(), 500);
-    }
   }
 
   // 주기적 동기화 (10분)
@@ -733,18 +730,31 @@ window.addEventListener('load', async () => {
     setInterval(() => { if (isSignedIn) syncNow(); }, 10 * 60 * 1000);
   }
 
-  // 페이지 로드시 GIS + GAPI 미리 로드 (버튼 클릭 빠르게)
+  // ── OAuth 리디렉션 콜백 처리 (가장 먼저 실행) ──
+  const oauthHandled = handleOAuthCallback();
+  if (oauthHandled) return; // 토큰 처리 중이면 나머지 초기화 스킵
+
+  // GAPI 미리 로드
   if (cfg.clientId) {
-    loadGISScript().then(() => addLog('GIS 사전 로드 완료', 'ok')).catch(()=>{});
     loadGAPIScript().then(() => {
       if (window.gapi && cfg.apiKey) window.gapi.client.setApiKey(cfg.apiKey);
-      addLog('GAPI 사전 로드 완료', 'ok');
     }).catch(()=>{});
+  }
+
+  // 이전 세션 토큰으로 자동 연결
+  if (savedToken && cfg.clientId) {
+    fetchUserInfo().then(() => {
+      if (cfg.autoSync !== false) syncNow();
+    }).catch(() => {
+      // 토큰 만료 시 세션 제거
+      sessionStorage.removeItem('won_drive_token');
+      isSignedIn = false;
+    });
   }
 });
 
-// ══ Google 연결 ═══════════════════════════════════════════
-async function connectGoogle() {
+// ══ Google 연결 (OAuth2 리디렉션 방식) ═══════════════════
+function connectGoogle() {
   const cfg = loadConfig();
   if (!cfg.clientId) {
     showToast('먼저 설정 탭에서 Client ID를 입력해주세요', 'err');
@@ -752,76 +762,72 @@ async function connectGoogle() {
     return;
   }
 
-  const btn = document.getElementById('connect-btn');
-  if (btn) btn.disabled = true;
-  addLog('Google 인증 라이브러리 로드 중...', 'info');
-  showToast('Google 연결 중...', 'info');
+  addLog('Google OAuth 인증 시작...', 'info');
+  showToast('Google 로그인 페이지로 이동합니다...', 'info');
 
-  try {
-    // 1. GIS 스크립트 로드
-    await loadGISScript();
-    addLog('GIS 로드 완료', 'ok');
+  // 현재 페이지 URL을 redirect_uri로 사용
+  const redirectUri = window.location.origin + window.location.pathname;
+  const scope = [
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email'
+  ].join(' ');
 
-    // 2. GAPI 스크립트 로드
-    await loadGAPIScript();
-    addLog('GAPI 로드 완료', 'ok');
+  // 상태값 저장 (redirect 후 복원용)
+  const state = btoa(JSON.stringify({ ts: Date.now() }));
+  sessionStorage.setItem('won_oauth_state', state);
+  sessionStorage.setItem('won_oauth_redirect', redirectUri);
 
-    // 3. GIS 확인
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      throw new Error('Google 인증 라이브러리를 불러오지 못했습니다. 페이지를 새로고침 후 다시 시도해주세요.');
-    }
+  // Google OAuth2 인증 URL 생성
+  const params = new URLSearchParams({
+    client_id: cfg.clientId,
+    redirect_uri: redirectUri,
+    response_type: 'token',
+    scope: scope,
+    state: state,
+    include_granted_scopes: 'true',
+  });
 
-    // 4. API Key 적용
-    if (window.gapi && window.gapi.client && cfg.apiKey) {
-      window.gapi.client.setApiKey(cfg.apiKey);
-    }
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+  addLog('OAuth URL 생성 완료, 이동 중...', 'ok');
 
-    addLog('토큰 클라이언트 초기화 중...', 'info');
+  // 리디렉션
+  window.location.href = authUrl;
+}
 
-    // 5. 토큰 클라이언트 생성
-    tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: cfg.clientId,
-      scope: [
-        'https://www.googleapis.com/auth/drive.readonly',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/userinfo.email'
-      ].join(' '),
-      callback: async (resp) => {
-        if (btn) btn.disabled = false;
-        if (resp.error) {
-          addLog('인증 실패: ' + resp.error, 'err');
-          showToast('인증 실패: ' + resp.error, 'err');
-          return;
-        }
-        accessToken = resp.access_token;
-        isSignedIn = true;
-        sessionStorage.setItem('won_drive_token', accessToken);
-        if (window.gapi && window.gapi.client) {
-          window.gapi.client.setToken({ access_token: accessToken });
-        }
-        await fetchUserInfo();
-        addLog('Google 인증 성공!', 'ok');
-        showToast('Google Drive 연결 완료 ✓', 'ok');
-        await syncNow();
-      },
-      error_callback: (err) => {
-        if (btn) btn.disabled = false;
-        addLog('인증 오류: ' + JSON.stringify(err), 'err');
-        showToast('인증 오류: ' + (err.message || err.type || '알 수 없는 오류'), 'err');
-      }
-    });
+// ── URL 해시에서 토큰 추출 (리디렉션 후 처리) ─────────────
+function handleOAuthCallback() {
+  const hash = window.location.hash.substring(1);
+  if (!hash) return false;
 
-    addLog('Google 로그인 팝업 열기...', 'info');
+  const params = new URLSearchParams(hash);
+  const token = params.get('access_token');
+  const error = params.get('error');
 
-    // 6. 팝업으로 로그인 요청 (prompt: 'select_account' 로 계정 선택창 강제)
-    tokenClient.requestAccessToken({ prompt: 'select_account' });
-
-  } catch(e) {
-    if (btn) btn.disabled = false;
-    addLog('연결 오류: ' + e.message, 'err');
-    showToast('연결 실패: ' + e.message, 'err');
-    console.error('connectGoogle error:', e);
+  if (error) {
+    addLog('OAuth 오류: ' + error, 'err');
+    showToast('인증 실패: ' + error, 'err');
+    // 해시 제거
+    history.replaceState(null, '', window.location.pathname);
+    return false;
   }
+
+  if (!token) return false;
+
+  // 토큰 저장
+  accessToken = token;
+  isSignedIn = true;
+  sessionStorage.setItem('won_drive_token', token);
+
+  // URL 해시 제거 (보안)
+  history.replaceState(null, '', window.location.pathname);
+
+  addLog('OAuth 인증 성공! 토큰 수신됨', 'ok');
+  showToast('Google Drive 연결 완료 ✓', 'ok');
+
+  // 사용자 정보 & 동기화
+  fetchUserInfo().then(() => syncNow());
+  return true;
 }
 
 async function fetchUserInfo() {
