@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>원금융 UW | 언더라이팅 도우미</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
+
+:root {
+  --bg: #F5F6F8;
+  --white: #FFFFFF;
+  --black: #191F28;
+  --gray1: #8B95A1;
+  --gray2: #B0B8C1;
+  --gray3: #E8ECF0;
+  --gray4: #F2F4F6;
+  --primary: #3182F6;
+  --primary-light: #EBF3FF;
+  --primary-dark: #1B64DA;
+  --green: #0DC97F;
+  --green-light: #E8FBF3;
+  --orange: #FF6B2B;
+  --orange-light: #FFF0EA;
+  --red: #F04452;
+  --red-light: #FFF0F2;
+  --yellow: #FF9500;
+  --yellow-light: #FFF8E8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow: 0 4px 16px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Noto Sans KR', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--black);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 앱 래퍼 ── */
+.app {
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  margin: 0 auto;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── 상단 헤더 ── */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px 12px;
+  min-height: 56px;
+  position: relative;
+  flex-shrink: 0;
+  background: var(--white);
+}
+
+.btn-back {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  color: var(--black);
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.btn-back:hover { background: var(--gray4); }
+
+.header-title {
+  font-size: 16px; font-weight: 700;
+  position: absolute; left: 50%; transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.header-right {
+  margin-left: auto;
+  font-size: 13px; color: var(--gray1); font-weight: 500;
+}
+
+/* 진행 바 */
+.progress-bar {
+  height: 3px;
+  background: var(--gray3);
+  flex-shrink: 0;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── 스크린 컨테이너 ── */
+.screen-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 0 0 32px;
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity .3s ease, transform .3s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  -webkit-overflow-scrolling: touch;
+}
+.screen.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.screen.exit-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+/* ── 홈 스크린 ── */
+.home-header {
+  padding: 32px 24px 20px;
+  background: linear-gradient(160deg, #1B64DA 0%, #3182F6 60%, #56A0FF 100%);
+  color: white;
+}
+.home-greeting {
+  font-size: 13px; font-weight: 500;
+  opacity: .85; margin-bottom: 6px;
+  letter-spacing: -.1px;
+}
+.home-title {
+  font-size: 26px; font-weight: 900;
+  line-height: 1.25; letter-spacing: -.5px;
+}
+.home-title span { opacity: .85; }
+.home-subtitle {
+  font-size: 14px; opacity: .75; margin-top: 8px;
+  line-height: 1.5;
+}
+
+.home-quick {
+  display: flex; gap: 8px;
+  padding: 0 20px;
+  margin-top: -1px;
+  background: linear-gradient(to bottom, #3182F6, #3182F6 20px, transparent 20px);
+}
+.quick-chip {
+  background: rgba(255,255,255,.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px; font-weight: 600; color: white;
+  white-space: nowrap;
+}
+
+/* 메뉴 섹션 */
+.menu-section { padding: 24px 20px 0; }
+.menu-section-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--gray1); letter-spacing: .5px;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+
+.menu-grid { display: flex; flex-direction: column; gap: 10px; }
+
+.menu-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray3);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-card:active { transform: scale(.98); }
+.menu-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+
+.menu-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.menu-icon.blue { background: var(--primary-light); }
+.menu-icon.green { background: var(--green-light); }
+.menu-icon.orange { background: var(--orange-light); }
+.menu-icon.yellow { background: var(--yellow-light); }
+
+.menu-info { flex: 1; min-width: 0; }
+.menu-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+.menu-desc { font-size: 13px; color: var(--gray1); line-height: 1.4; }
+
+.menu-arrow {
+  color: var(--gray2); font-size: 18px; flex-shrink: 0;
+}
+
+/* ── 질문 화면 ── */
+.question-wrap { padding: 32px 24px 24px; }
+.question-step {
+  font-size: 12px; font-weight: 700;
+  color: var(--primary); margin-bottom: 10px;
+  letter-spacing: .5px;
+}
+.question-title {
+  font-size: 22px; font-weight: 900;
+  line-height: 1.35; letter-spacing: -.4px;
+  margin-bottom: 6px;
+}
+.question-sub {
+  font-size: 14px; color: var(--gray1);
+  line-height: 1.6; margin-bottom: 28px;
+}
+
+/* 선택지 카드 */
+.choice-list { display: flex; flex-direction: column; gap: 10px; padding: 0 20px; }
+
+.choice-card {
+  background: var(--white);
+  border: 2px solid var(--gray3);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: all .18s;
+  position: relative;
+}
+.choice-card:active { transform: scale(.98); }
+.choice-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.choice-card.selected .choice-title { color: var(--primary); }
+
+.choice-icon { font-size: 24px; flex-shrink: 0; }
+.choice-info { flex: 1; }
+.choice-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.choice-desc { font-size: 12px; color: var(--gray1); }
+
+.choice-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--gray3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .15s;
+  font-size: 12px; color: white;
+}
+.choice-card.selected .choice-check {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+/* 입력 필드 */
+.input-section { padding: 0 20px; }
+.input-label {
+  font-size: 13px; font-weight: 600;
+  color: var(--gray1); margin-bottom: 8px; display: block;
+}
+.input-box {
+  width: 100%;
+  background: var(--gray4);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 16px; font-weight: 500;
+  color: var(--black);
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: all .2s;
+  outline: none;
+}
+.input-box:focus {
+  border-color: var(--primary);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(49,130,246,.1);
+}
+.input-box::placeholder { color: var(--gray2); }
+
+.select-box {
+  width: 100%;
+  background: var(--gray4);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 15px; font-weight: 500;
+  color: var(--black);
+  font-family: 'Noto Sans KR', sans-serif;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: all .2s;
+}
+.select-box:focus { border-color: var(--primary); background: var(--white); }
+
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.input-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+/* 태그 선택 */
+.tag-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 0 20px;
+}
+.tag-btn {
+  background: var(--gray4);
+  border: 2px solid transparent;
+  border-radius: 24px;
+  padding: 10px 18px;
+  font-size: 14px; font-weight: 600;
+  color: var(--black);
+  cursor: pointer;
+  transition: all .18s;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.tag-btn:active { transform: scale(.95); }
+.tag-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+/* ── 결과 화면 ── */
+.result-hero {
+  background: linear-gradient(150deg, #0DC97F, #00A36B);
+  color: white;
+  padding: 36px 24px 32px;
+  text-align: center;
+}
+.result-hero.warn {
+  background: linear-gradient(150deg, #FF9500, #FF6B2B);
+}
+.result-hero.danger {
+  background: linear-gradient(150deg, #F04452, #C8273A);
+}
+.result-hero-icon { font-size: 52px; margin-bottom: 14px; }
+.result-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+.result-hero-sub { font-size: 14px; opacity: .85; line-height: 1.5; }
+
+.result-summary {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--gray3);
+  margin: 0;
+}
+.result-sum-item {
+  background: var(--white);
+  padding: 16px 12px; text-align: center;
+}
+.result-sum-num {
+  font-size: 24px; font-weight: 900;
+  margin-bottom: 4px;
+}
+.result-sum-label { font-size: 11px; color: var(--gray1); font-weight: 500; }
+
+.company-section { padding: 24px 20px 0; }
+.company-section-title {
+  font-size: 13px; font-weight: 700;
+  color: var(--gray1); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.status-dot.ok { background: var(--green); }
+.status-dot.warn { background: var(--yellow); }
+.status-dot.danger { background: var(--red); }
+
+.company-list { display: flex; flex-direction: column; gap: 8px; }
+
+.company-item {
+  background: var(--white);
+  border: 1.5px solid var(--gray3);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: all .15s;
+}
+.company-item:active { transform: scale(.98); }
+.company-item.ok { border-color: rgba(13,201,127,.25); background: rgba(13,201,127,.03); }
+.company-item.warn { border-color: rgba(255,149,0,.25); background: rgba(255,149,0,.03); }
+.company-item.danger { border-color: rgba(240,68,82,.2); background: rgba(240,68,82,.02); }
+
+.company-logo {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--gray4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900;
+  flex-shrink: 0;
+}
+.company-info { flex: 1; min-width: 0; }
+.company-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.company-detail { font-size: 12px; color: var(--gray1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.company-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px; flex-shrink: 0;
+}
+.company-badge.ok { background: var(--green-light); color: var(--green); }
+.company-badge.warn { background: var(--yellow-light); color: var(--yellow); }
+.company-badge.danger { background: var(--red-light); color: var(--red); }
+
+/* 전략 박스 */
+.strategy-box {
+  margin: 20px 20px 0;
+  background: var(--primary-light);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.strategy-title {
+  font-size: 13px; font-weight: 700; color: var(--primary);
+  margin-bottom: 8px;
+}
+.strategy-text { font-size: 14px; color: var(--black); line-height: 1.7; }
+
+/* ── 하단 버튼 ── */
+.bottom-bar {
+  padding: 12px 20px 24px;
+  background: var(--white);
+  flex-shrink: 0;
+  border-top: 1px solid var(--gray3);
+}
+
+.btn-main {
+  width: 100%;
+  padding: 17px;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 17px; font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: all .18s;
+  letter-spacing: -.2px;
+}
+.btn-main:active { transform: scale(.98); background: var(--primary-dark); }
+.btn-main:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.btn-main.green { background: var(--green); }
+.btn-main.green:active { background: #0AB36D; }
+
+.btn-sub {
+  width: 100%;
+  padding: 14px;
+  background: none;
+  border: none;
+  color: var(--gray1);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  margin-top: 8px;
+}
+
+/* ── 로딩 ── */
+.loading-screen {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+.loading-animation {
+  position: relative; width: 80px; height: 80px; margin-bottom: 24px;
+}
+.loading-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 3px solid var(--gray3);
+  border-top-color: var(--primary);
+  animation: spin .8s linear infinite;
+}
+.loading-ring:nth-child(2) {
+  inset: 8px;
+  border-top-color: var(--green);
+  animation-delay: -.3s;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.loading-sub { font-size: 14px; color: var(--gray1); line-height: 1.6; }
+.loading-companies {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  justify-content: center; margin-top: 20px;
+}
+.loading-co {
+  background: var(--gray4); border-radius: 20px;
+  padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--gray1);
+  transition: all .3s;
+}
+.loading-co.checking { background: var(--primary-light); color: var(--primary); }
+.loading-co.done { background: var(--green-light); color: var(--green); }
+
+/* ── 고지의무 결과 ── */
+.goji-card {
+  margin: 16px 20px 0;
+  background: var(--white);
+  border: 1.5px solid var(--gray3);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.goji-card-header {
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+.goji-card-header.open { border-color: var(--gray3); }
+.goji-card-num {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--primary); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.goji-card-title { flex: 1; }
+.goji-card-name { font-size: 14px; font-weight: 700; }
+.goji-card-meta { font-size: 12px; color: var(--gray1); margin-top: 2px; }
+.goji-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+.goji-badge {
+  font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
+}
+.goji-badge.red { background: var(--red-light); color: var(--red); }
+.goji-badge.orange { background: var(--orange-light); color: var(--orange); }
+
+.goji-card-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height .3s ease;
+}
+.goji-card-body.open { max-height: 600px; }
+.goji-body-inner { padding: 14px 16px; }
+.goji-row {
+  display: flex; gap: 8px; padding: 8px 0;
+  border-bottom: 1px solid var(--gray4);
+  font-size: 13px;
+}
+.goji-row:last-child { border-bottom: none; }
+.goji-key { color: var(--gray1); min-width: 80px; flex-shrink: 0; }
+.goji-val { color: var(--black); flex: 1; line-height: 1.5; }
+
+/* 복사 버튼 */
+.copy-btn {
+  width: calc(100% - 40px);
+  margin: 16px 20px 0;
+  padding: 14px;
+  background: var(--gray4);
+  border: none; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 700; color: var(--black);
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all .2s;
+}
+.copy-btn:active { transform: scale(.98); background: var(--gray3); }
+
+/* ── 알림 토스트 ── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--black); color: white;
+  border-radius: 12px; padding: 12px 20px;
+  font-size: 14px; font-weight: 600;
+  box-shadow: var(--shadow-lg); z-index: 9999;
+  opacity: 0; transition: all .3s; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── 빈 상태 ── */
+.empty-state {
+  text-align: center; padding: 48px 24px;
+}
+.empty-icon { font-size: 48px; margin-bottom: 14px; }
+.empty-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+.empty-sub { font-size: 14px; color: var(--gray1); line-height: 1.6; }
+
+/* 구분선 */
+.divider { height: 8px; background: var(--bg); flex-shrink: 0; }
+
+/* 스크롤바 */
+.screen::-webkit-scrollbar { display: none; }
+
+/* 안내 박스 */
+.info-banner {
+  margin: 16px 20px 0;
+  background: var(--yellow-light);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px; color: #8B6500; line-height: 1.6;
+  display: flex; gap: 8px;
+}
+.info-banner.blue { background: var(--primary-light); color: #1B4DB8; }
+.info-banner.green { background: var(--green-light); color: #006A42; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 헤더 -->
+  <div class="header" id="app-header">
+    <button class="btn-back" id="btn-back" onclick="goBack()" style="display:none;">←</button>
+    <div class="header-title" id="header-title"></div>
+    <div class="header-right" id="header-step"></div>
+  </div>
+
+  <!-- 진행 바 -->
+  <div class="progress-bar" id="progress-bar" style="display:none;">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <!-- 스크린 컨테이너 -->
+  <div class="screen-container">
+
+    <!-- ══ 홈 화면 ══ -->
+    <div class="screen active" id="screen-home">
+      <div class="home-header">
+        <div class="home-greeting" id="home-greeting">안녕하세요 👋</div>
+        <div class="home-title">무엇을<br><span>도와드릴까요?</span></div>
+        <div class="home-subtitle">필요한 업무를 선택하면<br>단계별로 안내해드립니다</div>
+      </div>
+      <div class="divider"></div>
+      <div class="menu-section">
+        <div class="menu-section-title">언더라이팅</div>
+        <div class="menu-grid">
+          <div class="menu-card" onclick="startFlow('goji')">
+            <div class="menu-icon blue">🔍</div>
+            <div class="menu-info">
+              <div class="menu-name">고지의무 분석</div>
+              <div class="menu-desc">심평원 자료로 고지항목 확인</div>
+            </div>
+            <div class="menu-arrow">›</div>
+          </div>
+          <div class="menu-card" onclick="startFlow('uw')">
+            <div class="menu-icon orange">🏦</div>
+            <div class="menu-info">
+              <div class="menu-name">보험사별 인수 판단</div>
+              <div class="menu-desc">14개 보험사 가입 가능 여부 확인</div>
+            </div>
+            <div class="menu-arrow">›</div>
+          </div>
+        </div>
+      </div>
+      <div class="menu-section" style="margin-top:20px;">
+        <div class="menu-section-title">고객 관리</div>
+        <div class="menu-grid">
+          <div class="menu-card" onclick="startFlow('customer')">
+            <div class="menu-icon green">👤</div>
+            <div class="menu-info">
+              <div class="menu-name">고객 등록</div>
+              <div class="menu-desc">새 상담 고객 정보 저장</div>
+            </div>
+            <div class="menu-arrow">›</div>
+          </div>
+          <div class="menu-card" onclick="goScreen('screen-customer-list')">
+            <div class="menu-icon yellow">📋</div>
+            <div class="menu-info">
+              <div class="menu-name">고객 목록</div>
+              <div class="menu-desc" id="home-customer-count">상담 고객 관리</div>
+            </div>
+            <div class="menu-arrow">›</div>
+          </div>
+        </div>
+      </div>
+      <div style="height:40px;"></div>
+    </div>
+
+    <!-- ══ UW 흐름: STEP 1 — 고객 기본정보 ══ -->
+    <div class="screen" id="screen-uw-1">
+      <div class="question-wrap">
+        <div class="question-step">STEP 1</div>
+        <div class="question-title">고객 정보를<br>입력해주세요</div>
+        <div class="question-sub">분석에 활용됩니다</div>
+      </div>
+      <div class="input-section">
+        <div class="input-row">
+          <div>
+            <label class="input-label">이름</label>
+            <input class="input-box" id="uw-name" type="text" placeholder="홍길동" oninput="checkUW1()">
+          </div>
+          <div>
+            <label class="input-label">나이 (만)</label>
+            <input class="input-box" id="uw-age" type="number" placeholder="45" oninput="checkUW1()">
+          </div>
+        </div>
+        <div class="input-row">
+          <div>
+            <label class="input-label">성별</label>
+            <select class="select-box" id="uw-gender">
+              <option value="">선택</option>
+              <option value="남">남성</option>
+              <option value="여">여성</option>
+            </select>
+          </div>
+          <div>
+            <label class="input-label">희망 상품</label>
+            <select class="select-box" id="uw-product">
+              <option value="종신보험">종신보험</option>
+              <option value="건강보험">건강보험</option>
+              <option value="암보험">암보험</option>
+              <option value="실손보험">실손보험</option>
+              <option value="연금보험">연금보험</option>
+              <option value="CI보험">CI보험</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="input-label">심사 방식</label>
+          <select class="select-box" id="uw-mode">
+            <option value="표준체">표준체 (일반심사)</option>
+            <option value="3.5.5">3.5.5 간편심사</option>
+            <option value="3.4.5">3.4.5 간편심사</option>
+            <option value="3.3.5">3.3.5 간편심사</option>
+            <option value="3.2.5">3.2.5 간편심사</option>
+            <option value="3.1.5">3.1.5 간편심사</option>
+            <option value="3.0.5">3.0.5 간편심사</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ UW 흐름: STEP 2 — 병력 선택 ══ -->
+    <div class="screen" id="screen-uw-2">
+      <div class="question-wrap">
+        <div class="question-step">STEP 2</div>
+        <div class="question-title">주요 병력을<br>선택해주세요</div>
+        <div class="question-sub">해당하는 것을 모두 선택하세요<br>없으면 "병력 없음"을 선택하세요</div>
+      </div>
+      <div class="tag-grid" id="diag-tags">
+        <button class="tag-btn" data-diag="고혈압" onclick="toggleTag(this)">🩺 고혈압</button>
+        <button class="tag-btn" data-diag="당뇨" onclick="toggleTag(this)">💉 당뇨</button>
+        <button class="tag-btn" data-diag="암" onclick="toggleTag(this)">🔴 암</button>
+        <button class="tag-btn" data-diag="심장질환" onclick="toggleTag(this)">❤️ 심장질환</button>
+        <button class="tag-btn" data-diag="뇌혈관" onclick="toggleTag(this)">🧠 뇌혈관</button>
+        <button class="tag-btn" data-diag="디스크" onclick="toggleTag(this)">🦴 디스크/척추</button>
+        <button class="tag-btn" data-diag="갑상선" onclick="toggleTag(this)">🦋 갑상선</button>
+        <button class="tag-btn" data-diag="간질환" onclick="toggleTag(this)">🟤 간질환</button>
+        <button class="tag-btn" data-diag="신장" onclick="toggleTag(this)">💧 신장질환</button>
+        <button class="tag-btn" data-diag="정신건강" onclick="toggleTag(this)">🧩 정신건강</button>
+        <button class="tag-btn" data-diag="고지혈증" onclick="toggleTag(this)">📊 고지혈증</button>
+        <button class="tag-btn" data-diag="수술이력" onclick="toggleTag(this)">🚑 수술이력</button>
+        <button class="tag-btn selected" data-diag="없음" onclick="toggleNone(this)">✅ 병력 없음</button>
+      </div>
+      <div style="padding:20px 20px 0;">
+        <label class="input-label">추가 설명 (선택사항)</label>
+        <textarea class="input-box" id="uw-memo" rows="3"
+          style="resize:none;font-size:14px;"
+          placeholder="예) 고혈압 약물 조절 중, 혈압 130/85 수준&#10;예) 갑상선 결절 경과관찰, 2022년 발견"></textarea>
+      </div>
+    </div>
+
+    <!-- ══ UW 흐름: 로딩 ══ -->
+    <div class="screen" id="screen-uw-loading">
+      <div class="loading-screen">
+        <div class="loading-animation">
+          <div class="loading-ring"></div>
+          <div class="loading-ring"></div>
+        </div>
+        <div class="loading-title">보험사 기준 분석 중</div>
+        <div class="loading-sub" id="loading-msg">AI가 14개 보험사 기준을<br>대조하는 중입니다</div>
+        <div class="loading-companies" id="loading-cos"></div>
+      </div>
+    </div>
+
+    <!-- ══ UW 결과 ══ -->
+    <div class="screen" id="screen-uw-result">
+      <!-- JS로 채움 -->
+    </div>
+
+    <!-- ══ 고지 흐름: STEP 1 ══ -->
+    <div class="screen" id="screen-goji-1">
+      <div class="question-wrap">
+        <div class="question-step">STEP 1</div>
+        <div class="question-title">심사 방식을<br>선택해주세요</div>
+        <div class="question-sub">가입할 상품의 심사 유형을 선택하세요</div>
+      </div>
+      <div class="choice-list">
+        <div class="choice-card selected" data-mode="표준체" onclick="selectChoice(this,'goji-mode')">
+          <div class="choice-icon">📋</div>
+          <div class="choice-info">
+            <div class="choice-title">표준체 (일반심사)</div>
+            <div class="choice-desc">5년 이내 모든 진료 고지</div>
+          </div>
+          <div class="choice-check">✓</div>
+        </div>
+        <div class="choice-card" data-mode="3.5.5" onclick="selectChoice(this,'goji-mode')">
+          <div class="choice-icon">🟢</div>
+          <div class="choice-info">
+            <div class="choice-title">3.5.5 간편심사</div>
+            <div class="choice-desc">3개월 이내 입원·수술만 고지</div>
+          </div>
+          <div class="choice-check"></div>
+        </div>
+        <div class="choice-card" data-mode="3.3.5" onclick="selectChoice(this,'goji-mode')">
+          <div class="choice-icon">🟡</div>
+          <div class="choice-info">
+            <div class="choice-title">3.3.5 간편심사</div>
+            <div class="choice-desc">3개월+2년 이내 주요 질환</div>
+          </div>
+          <div class="choice-check"></div>
+        </div>
+        <div class="choice-card" data-mode="3.0.5" onclick="selectChoice(this,'goji-mode')">
+          <div class="choice-icon">🔵</div>
+          <div class="choice-info">
+            <div class="choice-title">3.0.5 간편심사</div>
+            <div class="choice-desc">3개월 이내 입원·수술만</div>
+          </div>
+          <div class="choice-check"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 고지 흐름: STEP 2 — 고객정보 ══ -->
+    <div class="screen" id="screen-goji-2">
+      <div class="question-wrap">
+        <div class="question-step">STEP 2</div>
+        <div class="question-title">고객 정보를<br>입력해주세요</div>
+      </div>
+      <div class="input-section">
+        <div class="input-row">
+          <div>
+            <label class="input-label">이름</label>
+            <input class="input-box" id="goji-name" type="text" placeholder="홍길동">
+          </div>
+          <div>
+            <label class="input-label">생년월일</label>
+            <input class="input-box" id="goji-dob" type="date">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 고지 흐름: STEP 3 — PDF 업로드 ══ -->
+    <div class="screen" id="screen-goji-3">
+      <div class="question-wrap">
+        <div class="question-step">STEP 3</div>
+        <div class="question-title">심평원 자료를<br>업로드해주세요</div>
+        <div class="question-sub">진료기록 PDF를 첨부하면<br>AI가 고지항목을 자동으로 분류합니다</div>
+      </div>
+
+      <div class="info-banner" style="margin:0 20px 16px;">
+        <span>📌</span>
+        <span>건강보험심사평가원(hira.or.kr) → 내 진료정보 열람 → PDF 저장 후 업로드</span>
+      </div>
+
+      <div style="padding:0 20px;">
+        <div style="border:2px dashed #B0B8C1;border-radius:16px;padding:36px 20px;text-align:center;cursor:pointer;position:relative;transition:all .2s;"
+          id="drop-zone"
+          ondragover="event.preventDefault();this.style.borderColor='#3182F6'"
+          ondragleave="this.style.borderColor='#B0B8C1'"
+          ondrop="handleGojiBrop(event)">
+          <input type="file" id="goji-file" multiple accept=".pdf,.xlsx,.xls"
+            style="position:absolute;inset:0;opacity:0;cursor:pointer;"
+            onchange="handleGojiFiles(this.files)">
+          <div style="font-size:36px;margin-bottom:10px;">📂</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">파일 선택 또는 드래그</div>
+          <div style="font-size:13px;color:#8B95A1;">PDF · Excel 지원</div>
+        </div>
+        <div id="goji-file-list" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+    </div>
+
+    <!-- ══ 고지 로딩 ══ -->
+    <div class="screen" id="screen-goji-loading">
+      <div class="loading-screen">
+        <div class="loading-animation">
+          <div class="loading-ring"></div>
+          <div class="loading-ring"></div>
+        </div>
+        <div class="loading-title">고지항목 분석 중</div>
+        <div class="loading-sub" id="goji-loading-msg">AI가 진료기록을 읽고<br>고지항목을 분류하는 중입니다</div>
+      </div>
+    </div>
+
+    <!-- ══ 고지 결과 ══ -->
+    <div class="screen" id="screen-goji-result">
+      <!-- JS로 채움 -->
+    </div>
+
+    <!-- ══ 고객 등록 ══ -->
+    <div class="screen" id="screen-customer-new">
+      <div class="question-wrap">
+        <div class="question-step">고객 등록</div>
+        <div class="question-title">고객 정보를<br>입력해주세요</div>
+      </div>
+      <div class="input-section">
+        <div class="input-row">
+          <div>
+            <label class="input-label">이름 *</label>
+            <input class="input-box" id="c-name" type="text" placeholder="홍길동">
+          </div>
+          <div>
+            <label class="input-label">나이</label>
+            <input class="input-box" id="c-age" type="number" placeholder="45">
+          </div>
+        </div>
+        <div class="input-row">
+          <div>
+            <label class="input-label">성별</label>
+            <select class="select-box" id="c-gender">
+              <option value="">선택</option>
+              <option value="남">남</option>
+              <option value="여">여</option>
+            </select>
+          </div>
+          <div>
+            <label class="input-label">연락처</label>
+            <input class="input-box" id="c-phone" type="tel" placeholder="010-0000-0000">
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="input-label">희망 상품</label>
+          <select class="select-box" id="c-product">
+            <option value="">선택</option>
+            <option>종신보험</option><option>건강보험</option>
+            <option>암보험</option><option>실손보험</option>
+            <option>연금보험</option><option>CI보험</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="input-label">주요 병력</label>
+          <div class="tag-grid" id="c-diag-tags" style="padding:0;margin-top:8px;">
+            <button class="tag-btn" data-diag="고혈압" onclick="toggleCTag(this)">🩺 고혈압</button>
+            <button class="tag-btn" data-diag="당뇨" onclick="toggleCTag(this)">💉 당뇨</button>
+            <button class="tag-btn" data-diag="암" onclick="toggleCTag(this)">🔴 암</button>
+            <button class="tag-btn" data-diag="심장질환" onclick="toggleCTag(this)">❤️ 심장</button>
+            <button class="tag-btn" data-diag="디스크" onclick="toggleCTag(this)">🦴 디스크</button>
+            <button class="tag-btn" data-diag="갑상선" onclick="toggleCTag(this)">🦋 갑상선</button>
+            <button class="tag-btn" data-diag="없음" onclick="toggleCNone(this)">✅ 없음</button>
+          </div>
+        </div>
+        <div>
+          <label class="input-label">메모</label>
+          <textarea class="input-box" id="c-memo" rows="3" style="resize:none;font-size:14px;" placeholder="상담 내용, 특이사항 등"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 고객 목록 ══ -->
+    <div class="screen" id="screen-customer-list">
+      <div style="padding:20px 20px 0;">
+        <input class="input-box" id="c-search" type="text" placeholder="🔍  이름·연락처·병력 검색..."
+          oninput="renderCustomerList()" style="margin-bottom:16px;">
+      </div>
+      <div id="customer-list-wrap" style="padding:0 20px;display:flex;flex-direction:column;gap:10px;"></div>
+      <div style="height:40px;"></div>
+    </div>
+
+  </div><!-- /screen-container -->
+
+  <!-- 하단 버튼 -->
+  <div class="bottom-bar" id="bottom-bar">
+    <button class="btn-main" id="btn-main" onclick="handleMain()">시작하기</button>
+  </div>
+
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ 상태 관리 ══════════════════════════════════════════
+const DB_KEY = 'won_customers_v1';
+const KB_KEY = 'won_knowledge_base_v1';
+
+let currentScreen = 'screen-home';
+let screenHistory = [];
+let currentFlow = null; // 'uw' | 'goji' | 'customer'
+let uwStep = 0;
+let gojiStep = 0;
+let selectedGojiMode = '표준체';
+let gojiFiles = [];
+let analysisResult = null;
+let customerResult = null;
+
+const COMPANIES = [
+  {id:'samsung_life',name:'삼성생명',type:'생명',emoji:'🔵'},
+  {id:'hanwha_life',name:'한화생명',type:'생명',emoji:'🟠'},
+  {id:'kyobo',name:'교보생명',type:'생명',emoji:'🟢'},
+  {id:'shinhan_life',name:'신한라이프',type:'생명',emoji:'🟦'},
+  {id:'mirae',name:'미래에셋생명',type:'생명',emoji:'🔷'},
+  {id:'db_life',name:'DB생명',type:'생명',emoji:'🟥'},
+  {id:'metlife',name:'메트라이프',type:'생명',emoji:'⬛'},
+  {id:'abl',name:'ABL생명',type:'생명',emoji:'🔶'},
+  {id:'samsung_fire',name:'삼성화재',type:'손보',emoji:'🔵'},
+  {id:'db_fire',name:'DB손보',type:'손보',emoji:'🟥'},
+  {id:'hyundai',name:'현대해상',type:'손보',emoji:'🟤'},
+  {id:'kb_fire',name:'KB손보',type:'손보',emoji:'🟡'},
+  {id:'meritz',name:'메리츠화재',type:'손보',emoji:'🟣'},
+  {id:'hanwha_fire',name:'한화손보',type:'손보',emoji:'🟠'},
+];
+
+// ══ 초기화 ══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const session = JSON.parse(localStorage.getItem('won_session_v1') || 'null');
+  const now = new Date().getHours();
+  const greeting = now < 12 ? '좋은 아침이에요' : now < 18 ? '안녕하세요' : '수고하셨어요';
+  document.getElementById('home-greeting').textContent = (session?.name ? session.name + '님, ' : '') + greeting + ' 👋';
+
+  const customers = loadCustomers();
+  document.getElementById('home-customer-count').textContent = `등록 고객 ${customers.length}명`;
+
+  goScreen('screen-home', false);
+});
+
+// ══ 화면 전환 ══════════════════════════════════════════
+function goScreen(id, pushHistory = true) {
+  const prev = document.getElementById(currentScreen);
+  const next = document.getElementById(id);
+  if (!next || id === currentScreen) return;
+
+  if (pushHistory) screenHistory.push(currentScreen);
+
+  prev?.classList.remove('active');
+  prev?.classList.add('exit-left');
+  setTimeout(() => prev?.classList.remove('exit-left'), 350);
+
+  next.classList.add('active');
+  currentScreen = id;
+
+  updateHeader(id);
+  updateBottomBar(id);
+  updateProgress(id);
+}
+
+function goBack() {
+  if (screenHistory.length === 0) return;
+  const prev = screenHistory.pop();
+  const curr = document.getElementById(currentScreen);
+  const target = document.getElementById(prev);
+
+  curr?.classList.remove('active');
+  target?.classList.add('active');
+  currentScreen = prev;
+
+  updateHeader(prev);
+  updateBottomBar(prev);
+  updateProgress(prev);
+}
+
+function updateHeader(id) {
+  const backBtn = document.getElementById('btn-back');
+  const title = document.getElementById('header-title');
+  const stepLabel = document.getElementById('header-step');
+
+  const map = {
+    'screen-home': { back: false, title: '', step: '' },
+    'screen-uw-1': { back: true, title: '인수 판단', step: '1/2' },
+    'screen-uw-2': { back: true, title: '인수 판단', step: '2/2' },
+    'screen-uw-loading': { back: false, title: '', step: '' },
+    'screen-uw-result': { back: true, title: '분석 결과', step: '' },
+    'screen-goji-1': { back: true, title: '고지의무 분석', step: '1/3' },
+    'screen-goji-2': { back: true, title: '고지의무 분석', step: '2/3' },
+    'screen-goji-3': { back: true, title: '고지의무 분석', step: '3/3' },
+    'screen-goji-loading': { back: false, title: '', step: '' },
+    'screen-goji-result': { back: true, title: '고지항목 결과', step: '' },
+    'screen-customer-new': { back: true, title: '고객 등록', step: '' },
+    'screen-customer-list': { back: true, title: '고객 목록', step: '' },
+  };
+  const info = map[id] || { back: true, title: '', step: '' };
+  backBtn.style.display = info.back ? 'flex' : 'none';
+  title.textContent = info.title;
+  stepLabel.textContent = info.step;
+}
+
+function updateBottomBar(id) {
+  const bar = document.getElementById('bottom-bar');
+  const btn = document.getElementById('btn-main');
+
+  const btnMap = {
+    'screen-home': { show: false },
+    'screen-uw-1': { show: true, text: '다음', color: '' },
+    'screen-uw-2': { show: true, text: '🔍 분석 시작', color: '' },
+    'screen-uw-loading': { show: false },
+    'screen-uw-result': { show: true, text: '📋 고객 DB에 저장', color: 'green' },
+    'screen-goji-1': { show: true, text: '다음', color: '' },
+    'screen-goji-2': { show: true, text: '다음', color: '' },
+    'screen-goji-3': { show: true, text: '🔍 고지항목 분석', color: '' },
+    'screen-goji-loading': { show: false },
+    'screen-goji-result': { show: true, text: '📋 복사 후 저장', color: 'green' },
+    'screen-customer-new': { show: true, text: '💾 고객 저장', color: 'green' },
+    'screen-customer-list': { show: false },
+  };
+
+  const info = btnMap[id] || { show: false };
+  bar.style.display = info.show ? 'block' : 'none';
+  if (info.show) {
+    btn.textContent = info.text;
+    btn.className = 'btn-main ' + (info.color || '');
+  }
+}
+
+function updateProgress(id) {
+  const bar = document.getElementById('progress-bar');
+  const fill = document.getElementById('progress-fill');
+
+  const progressMap = {
+    'screen-uw-1': 25, 'screen-uw-2': 75, 'screen-uw-result': 100,
+    'screen-goji-1': 20, 'screen-goji-2': 50, 'screen-goji-3': 80, 'screen-goji-result': 100,
+  };
+  const pct = progressMap[id];
+  if (pct) {
+    bar.style.display = 'block';
+    fill.style.width = pct + '%';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// ══ 플로우 시작 ══════════════════════════════════════════
+function startFlow(flow) {
+  currentFlow = flow;
+  if (flow === 'uw') goScreen('screen-uw-1');
+  else if (flow === 'goji') goScreen('screen-goji-1');
+  else if (flow === 'customer') goScreen('screen-customer-new');
+}
+
+// ══ 메인 버튼 핸들러 ══════════════════════════════════════
+function handleMain() {
+  const s = currentScreen;
+  if (s === 'screen-uw-1') { if (checkUW1()) goScreen('screen-uw-2'); }
+  else if (s === 'screen-uw-2') runUWAnalysis();
+  else if (s === 'screen-uw-result') saveToCustomerDB();
+  else if (s === 'screen-goji-1') goScreen('screen-goji-2');
+  else if (s === 'screen-goji-2') goScreen('screen-goji-3');
+  else if (s === 'screen-goji-3') { if (gojiFiles.length > 0) runGojiAnalysis(); else showToast('파일을 업로드해주세요'); }
+  else if (s === 'screen-goji-result') copyGojiText();
+  else if (s === 'screen-customer-new') saveCustomer();
+}
+
+// ══ UW 분석 ══════════════════════════════════════════════
+function checkUW1() {
+  const name = document.getElementById('uw-name').value.trim();
+  const age = document.getElementById('uw-age').value;
+  const btn = document.getElementById('btn-main');
+  btn.disabled = !name || !age;
+  return !btn.disabled;
+}
+
+function toggleTag(btn) {
+  const noneBtn = document.querySelector('[data-diag="없음"]');
+  if (noneBtn) noneBtn.classList.remove('selected');
+  btn.classList.toggle('selected');
+}
+
+function toggleNone(btn) {
+  document.querySelectorAll('#diag-tags .tag-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+async function runUWAnalysis() {
+  const name = document.getElementById('uw-name').value.trim();
+  const age = document.getElementById('uw-age').value;
+  const gender = document.getElementById('uw-gender').value;
+  const product = document.getElementById('uw-product').value;
+  const mode = document.getElementById('uw-mode').value;
+  const memo = document.getElementById('uw-memo').value.trim();
+  const diags = [...document.querySelectorAll('#diag-tags .tag-btn.selected')].map(b => b.dataset.diag).filter(d => d !== '없음');
+
+  goScreen('screen-uw-loading');
+
+  // 회사 애니메이션
+  const cosDiv = document.getElementById('loading-cos');
+  cosDiv.innerHTML = COMPANIES.map(c => `<span class="loading-co" id="lco-${c.id}">${c.name}</span>`).join('');
+  let i = 0;
+  const anim = setInterval(() => {
+    if (i > 0) document.getElementById('lco-' + COMPANIES[i-1]?.id)?.classList.replace('checking','done');
+    if (i < COMPANIES.length) {
+      document.getElementById('lco-' + COMPANIES[i].id)?.classList.add('checking');
+      i++;
+    } else clearInterval(anim);
+  }, 250);
+
+  // KB 자료 로드
+  const kbDocs = (() => { try { return JSON.parse(localStorage.getItem(KB_KEY)||'[]').filter(d=>d.active!==false); } catch{return[];} })();
+  const kbContext = kbDocs.length > 0
+    ? `\n[사내 인수심사 자료 ${kbDocs.length}건]\n` + kbDocs.map((d,i)=>`--- 자료${i+1}: ${d.name} [${d.company}/${d.category}] ---\n${(d.content||'').slice(0,1000)}`).join('\n\n')
+    : '';
+
+  const prompt = `당신은 보험 언더라이팅 전문가입니다.
+${kbContext}
+[고객] 이름:${name} 나이:${age}세 성별:${gender} 상품:${product} 심사:${mode}
+[병력] ${diags.length > 0 ? diags.join(', ') : '없음'}
+${memo ? '[추가정보] ' + memo : ''}
+
+14개 보험사(삼성생명,한화생명,교보생명,신한라이프,미래에셋생명,DB생명,메트라이프,ABL생명,삼성화재,DB손보,현대해상,KB손보,메리츠화재,한화손보)의 인수 가능 여부를 판단해주세요.
+${kbDocs.length > 0 ? '사내 자료 기준을 최우선으로 적용하고 rationale에 근거자료명을 명시하세요.' : ''}
+
+JSON만 출력(다른텍스트없이):
+{"summary":{"ok":숫자,"warn":숫자,"danger":숫자,"strategy":"전략2-3문장"},"recommendations":[{"rank":1,"company":"회사명","reason":"이유"}],"companies":[{"id":"","name":"","type":"","status":"ok|warn|danger","summary":"한줄요약","rationale":"근거","bumdambo":"부담보조건또는null","conditions":["조건"]}]}`;
+
+  try {
+    const apiKey = localStorage.getItem('won_api_key')||'';
+    const proxyUrl = localStorage.getItem('won_proxy_url')||'';
+    const endpoint = proxyUrl || 'https://api.anthropic.com/v1/messages';
+    const headers = {'Content-Type':'application/json'};
+    if (!proxyUrl) { headers['x-api-key']=apiKey; headers['anthropic-version']='2023-06-01'; }
+
+    const resp = await fetch(endpoint,{
+      method:'POST', headers,
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,messages:[{role:'user',content:prompt}]})
+    });
+    clearInterval(anim);
+    const data = await resp.json();
+    const raw = data.content?.find(c=>c.type==='text')?.text||'{}';
+    try { analysisResult = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { analysisResult = buildUWFallback(); }
+  } catch(e) {
+    clearInterval(anim);
+    analysisResult = buildUWFallback();
+  }
+
+  // 결과 저장 (DB 저장용)
+  customerResult = { name, age: parseInt(age)||null, gender, product, mode, diags, memo };
+  renderUWResult(analysisResult);
+  goScreen('screen-uw-result');
+}
+
+function renderUWResult(result) {
+  const s = result.summary || {};
+  const screen = document.getElementById('screen-uw-result');
+  const total = COMPANIES.length;
+  const heroClass = s.danger > 8 ? 'danger' : s.warn > 6 ? 'warn' : '';
+
+  const okList = (result.companies||[]).filter(c=>c.status==='ok');
+  const warnList = (result.companies||[]).filter(c=>c.status==='warn');
+  const dangerList = (result.companies||[]).filter(c=>c.status==='danger');
+
+  screen.innerHTML = `
+    <div class="result-hero ${heroClass}">
+      <div class="result-hero-icon">${heroClass==='danger'?'⚠️':heroClass==='warn'?'📊':'✅'}</div>
+      <div class="result-hero-title">${s.ok||0}개사 정상 인수 가능</div>
+      <div class="result-hero-sub">${customerResult?.name||'고객'}님 · ${customerResult?.product||''} · ${customerResult?.mode||''}</div>
+    </div>
+    <div class="result-summary">
+      <div class="result-sum-item"><div class="result-sum-num" style="color:#0DC97F">${s.ok||0}</div><div class="result-sum-label">정상 인수</div></div>
+      <div class="result-sum-item"><div class="result-sum-num" style="color:#FF9500">${s.warn||0}</div><div class="result-sum-label">조건부</div></div>
+      <div class="result-sum-item"><div class="result-sum-num" style="color:#F04452">${s.danger||0}</div><div class="result-sum-label">거절 가능</div></div>
+    </div>
+    ${s.strategy ? `
+    <div class="strategy-box">
+      <div class="strategy-title">🎯 추천 전략</div>
+      <div class="strategy-text">${s.strategy}</div>
+    </div>` : ''}
+    ${renderCompanySection('✅ 정상 인수', okList, 'ok')}
+    ${renderCompanySection('⚠️ 조건부 인수', warnList, 'warn')}
+    ${renderCompanySection('❌ 거절 가능', dangerList, 'danger')}
+    <div style="height:24px;"></div>
+  `;
+}
+
+function renderCompanySection(title, list, status) {
+  if (!list.length) return '';
+  const badge = {ok:'가능',warn:'조건부',danger:'거절'};
+  return `
+    <div class="company-section">
+      <div class="company-section-title">
+        <span class="status-dot ${status}"></span>${title}
+      </div>
+      <div class="company-list">
+        ${list.map(c => {
+          const co = COMPANIES.find(x=>x.name===c.name)||{};
+          return `
+            <div class="company-item ${status}">
+              <div class="company-logo">${co.emoji||'🏦'}</div>
+              <div class="company-info">
+                <div class="company-name">${c.name} <span style="font-size:11px;color:#B0B8C1;">${c.type||''}</span></div>
+                <div class="company-detail">${c.bumdambo ? '🔒 '+c.bumdambo : (c.summary||'-')}</div>
+              </div>
+              <div class="company-badge ${status}">${badge[status]}</div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+function buildUWFallback() {
+  return {
+    summary:{ok:6,warn:5,danger:3,strategy:'API 키 설정 후 정확한 분석을 받을 수 있습니다. settings.html에서 API 키를 입력해주세요.'},
+    recommendations:[],
+    companies: COMPANIES.map((c,i)=>({id:c.id,name:c.name,type:c.type,status:i%3===0?'ok':i%3===1?'warn':'danger',summary:'API 키 설정 필요',bumdambo:null,conditions:[]}))
+  };
+}
+
+// ══ 고지 분석 ══════════════════════════════════════════
+function selectChoice(btn, group) {
+  document.querySelectorAll(`[data-mode]`).forEach(b => {
+    b.classList.remove('selected');
+    b.querySelector('.choice-check').textContent = '';
+  });
+  btn.classList.add('selected');
+  btn.querySelector('.choice-check').textContent = '✓';
+  selectedGojiMode = btn.dataset.mode;
+}
+
+function handleGojiBrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').style.borderColor = '#B0B8C1';
+  handleGojiFiles(e.dataTransfer.files);
+}
+
+function handleGojiFiles(files) {
+  for (const f of files) {
+    if (!gojiFiles.find(x=>x.name===f.name)) gojiFiles.push(f);
+  }
+  renderGojiFileList();
+  document.getElementById('goji-file').value = '';
+}
+
+function renderGojiFileList() {
+  const el = document.getElementById('goji-file-list');
+  el.innerHTML = gojiFiles.map((f,i) => `
+    <div style="background:#F2F4F6;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">📄</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</div>
+        <div style="font-size:11px;color:#8B95A1;">${(f.size/1024).toFixed(0)} KB</div>
+      </div>
+      <button onclick="removeGojiFile(${i})" style="background:none;border:none;color:#B0B8C1;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeGojiFile(i) { gojiFiles.splice(i,1); renderGojiFileList(); }
+
+async function runGojiAnalysis() {
+  goScreen('screen-goji-loading');
+  const name = document.getElementById('goji-name').value || '고객';
+  const dob = document.getElementById('goji-dob').value || '';
+  const msgs = ['파일을 읽는 중...','진료 기록 파싱 중...','고지항목 분류 중...','양식 생성 중...'];
+  let mi = 0;
+  const msgInt = setInterval(() => {
+    if (mi < msgs.length) document.getElementById('goji-loading-msg').textContent = msgs[mi++];
+  }, 1200);
+
+  try {
+    const apiKey = localStorage.getItem('won_api_key')||'';
+    const proxyUrl = localStorage.getItem('won_proxy_url')||'';
+    const endpoint = proxyUrl || 'https://api.anthropic.com/v1/messages';
+    const headers = {'Content-Type':'application/json'};
+    if (!proxyUrl) { headers['x-api-key']=apiKey; headers['anthropic-version']='2023-06-01'; }
+
+    const contentArr = [];
+    for (const f of gojiFiles) {
+      if (f.type==='application/pdf'||f.name.endsWith('.pdf')) {
+        const b64 = await fileToB64(f);
+        contentArr.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}});
+      }
+    }
+    contentArr.push({type:'text',text:`보험 고지의무 전문가. 첨부 심평원 진료기록을 분석하세요.
+고객:${name} 생년월일:${dob} 심사모드:${selectedGojiMode} 기준일:${new Date().toISOString().slice(0,10)}
+
+JSON만 출력:
+{"has3mAlert":boolean,"alert3mDetail":"상세또는null","records":[{"id":1,"diagCode":"코드","diagName":"진단명","hospital":"병원","department":"진료과","startDate":"YYYY-MM-DD","endDate":"YYYY-MM-DD","visitDays":숫자,"admitDays":숫자,"hasSurgery":boolean,"surgery":"수술명또는null","drugDays":숫자,"drugs":["약품명"],"gojiItems":["고지항목"],"isWithin3m":boolean}],"summary":{"totalRecords":숫자,"hasSurgery":숫자,"hasAdmit":숫자,"hasCritical":숫자}}`});
+
+    const resp = await fetch(endpoint,{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,messages:[{role:'user',content:contentArr}]})});
+    clearInterval(msgInt);
+    const data = await resp.json();
+    const raw = data.content?.find(c=>c.type==='text')?.text||'{}';
+    try { analysisResult = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { analysisResult = {has3mAlert:false,records:[],summary:{totalRecords:0,hasSurgery:0,hasAdmit:0,hasCritical:0}}; }
+  } catch(e) {
+    clearInterval(msgInt);
+    analysisResult = {has3mAlert:false,records:[],summary:{totalRecords:0,hasSurgery:0,hasAdmit:0,hasCritical:0}};
+  }
+
+  renderGojiResult(analysisResult, name, dob);
+  goScreen('screen-goji-result');
+}
+
+function renderGojiResult(result, name, dob) {
+  const s = result.summary || {};
+  const screen = document.getElementById('screen-goji-result');
+  const hasIssue = result.has3mAlert || (s.totalRecords > 0);
+
+  screen.innerHTML = `
+    <div class="result-hero ${result.has3mAlert ? 'warn' : s.totalRecords === 0 ? '' : ''}">
+      <div class="result-hero-icon">${s.totalRecords===0?'✅':result.has3mAlert?'⚠️':'📋'}</div>
+      <div class="result-hero-title">${s.totalRecords===0?'고지 항목 없음':s.totalRecords+'건 고지 항목 발견'}</div>
+      <div class="result-hero-sub">${name}님 · ${selectedGojiMode}</div>
+    </div>
+    <div class="result-summary">
+      <div class="result-sum-item"><div class="result-sum-num" style="color:#3182F6">${s.totalRecords||0}</div><div class="result-sum-label">고지 건수</div></div>
+      <div class="result-sum-item"><div class="result-sum-num" style="color:#F04452">${s.hasSurgery||0}</div><div class="result-sum-label">수술</div></div>
+      <div class="result-sum-item"><div class="result-sum-num" style="color:#FF9500">${s.hasAdmit||0}</div><div class="result-sum-label">입원</div></div>
+    </div>
+    ${result.has3mAlert ? `
+    <div class="info-banner" style="margin:16px 20px 0;background:#FFF8E8;color:#8B6500;">
+      <span>⚠️</span>
+      <span><strong>3개월 이내 진료 있음</strong> — ${result.alert3mDetail||'추가검사/재검사 여부 반드시 확인'}</span>
+    </div>` : ''}
+    <div style="padding:20px 20px 8px;font-size:13px;font-weight:700;color:#8B95A1;">고지 항목 상세</div>
+    ${(result.records||[]).map((rec,i) => buildGojiCard(rec,i+1)).join('')}
+    <button class="copy-btn" onclick="copyGojiText()">📋 고지양식 전체 복사</button>
+    <div style="height:24px;"></div>
+  `;
+}
+
+function buildGojiCard(rec, num) {
+  return `
+    <div class="goji-card">
+      <div class="goji-card-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <div class="goji-card-num">${num}</div>
+        <div class="goji-card-title">
+          <div class="goji-card-name">${rec.diagCode?'['+rec.diagCode+'] ':''}${rec.diagName||'진단명 미상'}</div>
+          <div class="goji-card-meta">${rec.hospital||''} · ${rec.startDate||''}</div>
+        </div>
+        <div class="goji-badges">
+          ${(rec.gojiItems||[]).map(g=>`<span class="goji-badge ${g.includes('입원')||g.includes('수술')?'red':'orange'}">${g}</span>`).join('')}
+        </div>
+      </div>
+      <div class="goji-card-body">
+        <div class="goji-body-inner">
+          <div class="goji-row"><div class="goji-key">의료기관</div><div class="goji-val">${rec.hospital||'-'}</div></div>
+          <div class="goji-row"><div class="goji-key">진료기간</div><div class="goji-val">${rec.startDate||'-'} ~ ${rec.endDate||'-'}</div></div>
+          <div class="goji-row"><div class="goji-key">통원/입원</div><div class="goji-val">통원 ${rec.visitDays||0}일${rec.admitDays>0?' / 입원 '+rec.admitDays+'일':''}</div></div>
+          <div class="goji-row"><div class="goji-key">수술</div><div class="goji-val">${rec.surgery||'없음'}</div></div>
+          <div class="goji-row"><div class="goji-key">투약</div><div class="goji-val">${rec.drugDays||0}일</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function copyGojiText() {
+  if (!analysisResult) return;
+  const name = document.getElementById('goji-name')?.value || '고객';
+  let txt = `[고지의무 분석 결과]\n고객: ${name} / 심사모드: ${selectedGojiMode}\n기준일: ${new Date().toLocaleDateString('ko-KR')}\n\n`;
+  if (analysisResult.has3mAlert) txt += `⚠️ 3개월 이내 진료 있음\n${analysisResult.alert3mDetail||''}\n\n`;
+  (analysisResult.records||[]).forEach((r,i) => {
+    txt += `■ 진료 ${i+1}: [${r.diagCode||''}] ${r.diagName||''}\n`;
+    txt += `의료기관: ${r.hospital||''}\n`;
+    txt += `기간: ${r.startDate||''} ~ ${r.endDate||''}\n`;
+    txt += `고지항목: ${(r.gojiItems||[]).join(', ')}\n\n`;
+  });
+  if (!analysisResult.records?.length) txt += '✅ 고지 대상 항목 없음\n';
+  navigator.clipboard.writeText(txt).then(() => showToast('고지양식이 복사되었습니다 ✓'));
+}
+
+// ══ 고객 DB ══════════════════════════════════════════════
+function loadCustomers() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)||'[]'); } catch { return []; }
+}
+function saveCustomers(list) { localStorage.setItem(DB_KEY, JSON.stringify(list)); }
+
+function toggleCTag(btn) {
+  const noneBtn = document.querySelector('#c-diag-tags [data-diag="없음"]');
+  if (noneBtn) noneBtn.classList.remove('selected');
+  btn.classList.toggle('selected');
+}
+function toggleCNone(btn) {
+  document.querySelectorAll('#c-diag-tags .tag-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function saveCustomer() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { showToast('이름을 입력해주세요'); return; }
+  const diags = [...document.querySelectorAll('#c-diag-tags .tag-btn.selected')].map(b=>b.dataset.diag);
+  const customer = {
+    id: Date.now().toString(36),
+    name, age: parseInt(document.getElementById('c-age').value)||null,
+    gender: document.getElementById('c-gender').value,
+    phone: document.getElementById('c-phone').value.trim(),
+    product: document.getElementById('c-product').value,
+    diags, memo: document.getElementById('c-memo').value.trim(),
+    status: 'active', createdAt: new Date().toISOString()
+  };
+  const list = loadCustomers();
+  list.unshift(customer);
+  saveCustomers(list);
+  document.getElementById('home-customer-count').textContent = `등록 고객 ${list.length}명`;
+  showToast(`${name}님 등록 완료 ✓`);
+  // 입력 초기화
+  ['c-name','c-phone','c-memo'].forEach(id=>document.getElementById(id).value='');
+  ['c-age'].forEach(id=>document.getElementById(id).value='');
+  ['c-gender','c-product'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('#c-diag-tags .tag-btn').forEach(b=>b.classList.remove('selected'));
+  setTimeout(()=>{ screenHistory=[]; goScreen('screen-home',false); }, 800);
+}
+
+function saveToCustomerDB() {
+  if (!customerResult || !analysisResult) return;
+  const list = loadCustomers();
+  const uw = analysisResult.summary;
+  const customer = {
+    id: Date.now().toString(36),
+    ...customerResult,
+    uwResult: { ok: uw?.ok||0, warn: uw?.warn||0, danger: uw?.danger||0 },
+    recommend: analysisResult.recommendations?.[0]?.company || '',
+    status: 'active', createdAt: new Date().toISOString()
+  };
+  list.unshift(customer);
+  saveCustomers(list);
+  document.getElementById('home-customer-count').textContent = `등록 고객 ${list.length}명`;
+  showToast(`${customerResult.name}님 고객 DB에 저장됨 ✓`);
+}
+
+function renderCustomerList() {
+  const q = document.getElementById('c-search').value.toLowerCase();
+  const customers = loadCustomers().filter(c =>
+    !q || (c.name||'').includes(q) || (c.phone||'').includes(q) ||
+    (c.diags||[]).some(d=>d.includes(q)) || (c.product||'').includes(q)
+  );
+  const wrap = document.getElementById('customer-list-wrap');
+  if (!customers.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">고객이 없습니다</div><div class="empty-sub">홈에서 고객을 등록해보세요</div></div>`;
+    return;
+  }
+  const statusColor = {active:'#0DC97F',pending:'#FF9500',closed:'#3182F6',issue:'#F04452'};
+  const statusLabel = {active:'진행중',pending:'대기',closed:'완료',issue:'이슈'};
+  wrap.innerHTML = customers.map(c => `
+    <div style="background:white;border:1.5px solid #E8ECF0;border-radius:14px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EBF3FF;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#3182F6;flex-shrink:0;">${(c.name||'?')[0]}</div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">${c.name} <span style="font-size:12px;font-weight:400;color:#8B95A1;">${c.age||''}세 ${c.gender||''}</span></div>
+          <div style="font-size:12px;color:#8B95A1;">${c.phone||''}</div>
+        </div>
+        <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${statusColor[c.status]||'#0DC97F'}18;color:${statusColor[c.status]||'#0DC97F'}">${statusLabel[c.status]||'진행중'}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${c.product?`<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;background:#EBF3FF;color:#3182F6;">${c.product}</span>`:''}
+        ${(c.diags||[]).filter(d=>d!=='없음').map(d=>`<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;background:#FFF0F2;color:#F04452;">${d}</span>`).join('')}
+        ${c.uwResult?`<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;background:#E8FBF3;color:#0DC97F;">✅${c.uwResult.ok}개사</span>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══ 유틸 ══════════════════════════════════════════════
+function fileToB64(file) {
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = e => res(e.target.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// 고객 목록 열릴 때 렌더링
+const origGoScreen = goScreen;
+document.addEventListener('click', e => {
+  if (currentScreen === 'screen-customer-list') renderCustomerList();
+});
+</script>
+</body>
+</html>
