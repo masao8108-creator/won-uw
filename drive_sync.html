@@ -985,13 +985,8 @@ async function syncNow() {
 }
 
 async function fetchAllFiles(folderId, cfg, parentName = '') {
-  // Drive API 로드 확인
-  if (!window.gapi?.client?.drive) {
-    try { await window.gapi.client.load('drive', 'v3'); } catch(e) {}
-  }
-  if (!window.gapi?.client?.drive) {
-    throw new Error('Drive API를 로드할 수 없습니다. API Key와 Client ID를 확인해주세요.');
-  }
+  // gapi 없어도 fetch로 직접 Drive API 호출 가능
+  // (accessToken이 있으면 gapi 불필요)
   const files = [];
   const fileTypes = [];
   if (document.getElementById('ft-pdf')?.checked) fileTypes.push("mimeType='application/pdf'");
@@ -1005,19 +1000,28 @@ async function fetchAllFiles(folderId, cfg, parentName = '') {
 
   let pageToken = null;
   do {
-    const params = {
+    // gapi 대신 fetch로 직접 Drive REST API 호출
+    const qs = new URLSearchParams({
       q: query,
       fields: 'nextPageToken,files(id,name,mimeType,modifiedTime,size,parents)',
-      pageSize: 100,
-    };
-    if (pageToken) params.pageToken = pageToken;
+      pageSize: '100',
+      ...(pageToken ? { pageToken } : {})
+    });
 
-    const resp = await window.gapi.client.drive.files.list(params);
-    const result = resp.result;
+    const resp = await fetch(
+      'https://www.googleapis.com/drive/v3/files?' + qs.toString(),
+      { headers: { Authorization: 'Bearer ' + accessToken } }
+    );
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error('Drive API 오류 ' + resp.status + ': ' + errText);
+    }
+
+    const result = await resp.json();
 
     for (const f of (result.files || [])) {
       if (f.mimeType === 'application/vnd.google-apps.folder') {
-        // 하위 폴더 재귀
         if (document.getElementById('tog-subfolder')?.classList.contains('on')) {
           const subFiles = await fetchAllFiles(f.id, cfg, f.name);
           files.push(...subFiles);
